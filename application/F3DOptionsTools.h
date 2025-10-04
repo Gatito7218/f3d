@@ -7,13 +7,14 @@
  */
 #include <filesystem>
 #include <map>
+#include <unordered_set>
 #include <string>
 #include <tuple>
 #include <vector>
 
 namespace F3DOptionsTools
 {
-using OptionsDict = std::map<std::string, std::string>;
+using OptionsDict = std::map<std::string, std::vector<std::string>>;
 using OptionsEntry = std::tuple<OptionsDict, std::string, std::string, std::string>;
 using OptionsEntries = std::vector<OptionsEntry>;
 
@@ -25,42 +26,52 @@ using OptionsEntries = std::vector<OptionsEntry>;
  * and ParseCLIOptions
  */
 static inline const OptionsDict DefaultAppOptions = {
-  { "input", "" },
-  { "output", "" },
-  { "list-bindings", "false" },
-  { "no-background", "false" },
-  { "config", "" },
-  { "no-config", "false" },
-  { "no-render", "false" },
-  { "rendering-backend", "auto" },
-  { "max-size", "" },
-  { "animation-time", "" },
-  { "watch", "false" },
-  { "load-plugins", "" },
-  { "screenshot-filename", "{app}/{model}_{n}.png" },
-  { "verbose", "info" },
-  { "multi-file-mode", "single" },
-  { "recursive-dir-add", "false" },
-  { "remove-empty-file-groups", "false" },
-  { "resolution", "1000, 600" },
-  { "position", "" },
-  { "colormap-file", "" },
-  { "camera-position", "" },
-  { "camera-focal-point", "" },
-  { "camera-view-up", "" },
-  { "camera-view-angle", "0.0" },
-  { "camera-direction", "" },
-  { "camera-zoom-factor", "0.0" },
-  { "camera-azimuth-angle", "0.0" },
-  { "camera-elevation-angle", "0.0" },
-  { "reference", "" },
-  { "reference-threshold", "0.04" },
-  { "interaction-test-record", "" },
-  { "interaction-test-play", "" },
-  { "command-script", "" },
-  { "frame-rate", "30.0" },
+  { "input", {""} },
+  { "output", {""} },
+  { "list-bindings", {"false"} },
+  { "no-background", {"false"} },
+  { "config", {""} },
+  { "no-config", {"false"} },
+  { "no-render", {"false"} },
+  { "rendering-backend", {"auto"} },
+  { "max-size", {""} },
+  { "animation-time", {""} },
+  { "watch", {"false"} },
+  { "load-plugins", {""} },
+  { "screenshot-filename", {"{app}/{model}_{n}.png"} },
+  { "verbose", {"info"} },
+  { "multi-file-mode", {"single"} },
+  { "recursive-dir-add", {"false"} },
+  { "remove-empty-file-groups", {"false"} },
+  { "resolution", {"1000, 600"} },
+  { "position", {""} },
+  { "colormap-file", {""} },
+  { "camera-position", {""} },
+  { "camera-focal-point", {""} },
+  { "camera-view-up", {""} },
+  { "camera-view-angle", {"0.0"} },
+  { "camera-direction", {""} },
+  { "camera-zoom-factor", {"0.0"} },
+  { "camera-azimuth-angle", {"0.0"} },
+  { "camera-elevation-angle", {"0.0"} },
+  { "reference", {""} },
+  { "reference-threshold", {"0.04"} },
+  { "interaction-test-record", {""} },
+  { "interaction-test-play", {""} },
+  { "command-script", {""} },
+  { "frame-rate", {"30.0"} },
 };
 
+/**
+ * Help set for options that can be used multiple times
+ * Add others to the set if needed 
+ */
+
+static inline const std::unordered_set<std::string> MultiUseOptions = {
+  "input",
+  "define",
+  "rest"
+};
 /**
  * Mapping of CLI option name to their libf3d options name counterpart
  */

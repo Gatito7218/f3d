@@ -460,7 +460,9 @@ F3DOptionsTools::OptionsDict F3DOptionsTools::ParseCLIOptions(
           auto appIter = F3DOptionsTools::DefaultAppOptions.find(std::string(cliOption.LongName));
           if (appIter != F3DOptionsTools::DefaultAppOptions.end())
           {
-            defaultValue = appIter->second;
+            if (!appIter->second.empty()) {
+              defaultValue = appIter->second[0];
+            }
           }
           else
           {
@@ -577,7 +579,20 @@ F3DOptionsTools::OptionsDict F3DOptionsTools::ParseCLIOptions(
       // Discard boolean option like `--version` or `--help`
       if (std::find(::CLIBooleans.begin(), ::CLIBooleans.end(), res.key()) == ::CLIBooleans.end())
       {
-        cliOptionsDict[res.key()] = res.value();
+        const std::string& key = res.key();
+        //Check if the option supports multiple uses
+        bool isMultiUse = F3DOptionsTools::MultiUseOptions.find(key) != F3DOptionsTools::MultiUseOptions.end();
+        if (isMultiUse) {
+          //For multi-use options, append all values
+          auto& valueVec = cliOptionsDict[key];
+          for (const auto& value : res.as<std::vector<std::string>>()) {
+            valueVec.push_back(value);
+          }
+        }
+        else {
+          //for single-use options
+          cliOptionsDict[key] = { res.value() };
+        }
       }
     }
 
@@ -590,13 +605,23 @@ F3DOptionsTools::OptionsDict F3DOptionsTools::ParseCLIOptions(
         f3d::log::warn("Could not parse a define '", define, "'");
         continue;
       }
-      cliOptionsDict[define.substr(0, sepIdx)] = define.substr(sepIdx + 1);
+      std::string optionName = define.substr(0, sepIdx);
+      std::string optionValue = define.substr(sepIdx + 1);
+      //Check for multi-use
+      bool isMultiUse = F3DOptionsTools::MultiUseOptions.find(optionName) != F3DOptionsTools::MultiUseOptions.end();
+      if (isMultiUse) {
+        cliOptionsDict[optionName].push_back(optionValue);
+      }
+      else {
+        //single use
+        cliOptionsDict[optionName] = { optionValue };
+      }
     }
 
     // Handles reset using the dedicated syntax
     for (const std::string& reset : resets)
     {
-      cliOptionsDict["reset-" + reset] = "";
+      cliOptionsDict["reset-" + reset] = { "" };
     }
 
     return cliOptionsDict;

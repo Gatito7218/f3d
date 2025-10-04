@@ -252,14 +252,51 @@ F3DConfigFileTools::ParsedConfigFiles F3DConfigFileTools::ReadConfigFiles(
               localEntry = std::ref(imperativeEntry);
               key = key.substr(1);
             }
-
-            if (item.value().is_number() || item.value().is_boolean())
-            {
-              localEntry.get()[key] = nlohmann::to_string(item.value());
+            //check multi-use
+            bool isMultiUse = F3DOptionsTools::MultiUseOptions.find(key) != F3DConfigFileTools::MultiUseOptions.end();
+            
+            if (item.value().is_array()) {
+              std::vector<std::string> values;
+              for (const auto& arrayItem : item.value()) {
+                if (arrayItem.is_number() || arrayItem.is_boolean()) {
+                  values_push_back(nlohmann::to_string(arrayItem));
+                }
+                else if (arrayItem.is_string()) {
+                  values.push_back(arrayItem.get<std::string>());
+                }
+                else {
+                    f3d::log::error("Array element in ", key, " from ", configFilePath.string(),
+                    " must be a string, boolean, or number, ignoring element");
+                }
+              }
+              if (!values.empty()) {
+                if (isMultiUse) {
+                  auto& existingValues = localEntry.get()[key];
+                  existingValues.insert(existingValues.end(), values.begin(), values.end());
+                }
+                else {
+                  localEntry.get()[key] = values;
+                }
+              }
+            }
+            else if (item.value().is_number() || item.value().is_boolean()) {
+              std::string value = item.value().get<std::string>();
+              if (isMultiUse) {
+                localEntry.get()[key].push_back(value);
+              }
+              else {
+                localEntry.get()[key] = { value };
+              }
             }
             else if (item.value().is_string())
             {
-              localEntry.get()[key] = item.value().get<std::string>();
+              std::string value = item.value().get<std::string>();
+              if (isMultiUse) {
+                localEntry.get()[key].push_back(value);
+              }
+              else {
+                localEntry.get()[key] = { value };
+              }
             }
             else
             {
